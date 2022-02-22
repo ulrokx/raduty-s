@@ -30,7 +30,7 @@ func (s *Server) CreateAvailability(c *gin.Context) {
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   err,
+			"error":   "internal",
 			"message": "JSON did not bind correctly",
 		})
 		fmt.Println("bad json")
@@ -40,7 +40,7 @@ func (s *Server) CreateAvailability(c *gin.Context) {
 	parsedDates, perr := util.ParseDateArr(req.Dates)
 	if perr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   perr.Error(),
+			"error":   "internal",
 			"message": "invalid date formatting",
 		})
 	}
@@ -59,7 +59,8 @@ func (s *Server) CreateAvailability(c *gin.Context) {
 	if errors.Is(qRes.Error, gorm.ErrRecordNotFound) {
 		s.DB.Create(&assistant)
 		c.JSON(http.StatusCreated, gin.H{
-			"message": "registered RA",
+			"message": "registered",
+			"result":  assistant,
 		})
 
 	} else {
@@ -71,7 +72,7 @@ func (s *Server) CreateAvailability(c *gin.Context) {
 			s.DB.Save(&raEntry)
 
 			c.JSON(http.StatusCreated, gin.H{
-				"message": "re-registered RA",
+				"message": "reregistered",
 			})
 		} else {
 			c.JSON(http.StatusForbidden, gin.H{
@@ -90,6 +91,8 @@ func (s *Server) AlreadyRegistered(c *gin.Context) {
 			"error":   berr.Error(),
 			"message": "not valid request",
 		})
+		fmt.Printf("error here %s\n", berr.Error())
+		return
 	}
 	var ra models.Assistant
 	dberr := s.DB.First(&ra, "cw_id = ?", req.CWID)
