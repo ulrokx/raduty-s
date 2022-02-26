@@ -23,6 +23,6 @@ type Assistant struct {
 	CWID            string `gorm:"unique"`
 	Email           string
 	DayAvailability DayEnum
-	Unavailables    []Unavailable `gorm:"constraint:OnUpdate:CASCADE"`
+	Unavailable     []Unavailable `gorm:"constraint:OnUpdate:CASCADE"`
 	CanResubmit     bool          `gorm:"default:FALSE"`
 }

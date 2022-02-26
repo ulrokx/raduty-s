@@ -9,5 +9,5 @@ import (
 type Unavailable struct {
 	gorm.Model
 	Day         time.Time
-	AssistantID uint
+	AssistantID int
 }

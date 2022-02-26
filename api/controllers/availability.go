@@ -51,13 +51,18 @@ func (s *Server) CreateAvailability(c *gin.Context) {
 		CWID:            req.CWID,
 		Email:           req.Email,
 		DayAvailability: daymask,
-		Unavailables:    parsedDates,
+		Unavailable:     parsedDates,
 	}
 	//see if assistant already registered could be extracted
 	var raEntry models.Assistant
 	qRes := s.DB.First(&raEntry, "cw_id = ?", req.CWID)
 	if errors.Is(qRes.Error, gorm.ErrRecordNotFound) {
 		s.DB.Create(&assistant)
+		// to := []string{assistant.Email}
+		// _, err := util.SendEmailSMTP(to, "RA Registration")
+		// if err != nil {
+		// 	fmt.Println(err.Error())
+		// }
 		c.JSON(http.StatusCreated, gin.H{
 			"message": "registered",
 			"result":  assistant,
@@ -67,9 +72,14 @@ func (s *Server) CreateAvailability(c *gin.Context) {
 		if raEntry.CanResubmit == true {
 			s.DB.Where("assistant_id = ?", raEntry.ID).Delete(&models.Unavailable{})
 			raEntry.DayAvailability = daymask
-			raEntry.Unavailables = parsedDates
+			raEntry.Unavailable = parsedDates
 			raEntry.CanResubmit = false
 			s.DB.Save(&raEntry)
+			// to := []string{assistant.Email}
+			// _, err := util.SendEmailSMTP(to, "RA Re-registration")
+			// if err != nil {
+			// 	fmt.Println(err.Error())
+			// }
 
 			c.JSON(http.StatusCreated, gin.H{
 				"message": "reregistered",
