@@ -25,4 +25,6 @@ type Assistant struct {
 	DayAvailability DayEnum
 	Unavailable     []Unavailable `gorm:"constraint:OnUpdate:CASCADE"`
 	CanResubmit     bool          `gorm:"default:FALSE"`
+	GroupID         int           `gorm:"default:0"`
+	Shifts          []Shift       `gorm:"foreignKey:AssistantID"`
 }

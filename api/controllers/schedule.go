@@ -16,6 +16,8 @@ type GenerateRequest struct {
 	BeginDate string `binding:"required"`
 	EndDate   string `binding:"required"`
 	PerShift  int    `binding:"required"`
+	Group     int    `binding:"required"`
+	Schedule  int
 }
 
 type IDToDays struct {
@@ -34,9 +36,10 @@ func (s *Server) GenerateSchedule(c *gin.Context) {
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   err,
+			"error":   err.Error(),
 			"message": "bad request",
 		})
+		return
 	}
 	startDate, err := util.ParseDate(req.BeginDate)
 	endDate, err := util.ParseDate(req.EndDate)
@@ -58,7 +61,7 @@ func (s *Server) GenerateSchedule(c *gin.Context) {
 	// find how many days each ra can work
 	// get all ras
 	var allRAs []models.Assistant
-	qres := s.DB.Preload("Unavailable").Find(&allRAs)
+	qres := s.DB.Preload("Unavailable").Find(&allRAs, "group_id = ?", req.Group)
 	if qres.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   qres.Error,
@@ -87,20 +90,30 @@ func (s *Server) GenerateSchedule(c *gin.Context) {
 	sort.Sort(ByDays(IDMap))
 	// until a schedule is found, randomly try to create schedule
 	numOfRAs := len(allRAs)
+	if numOfRAs == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "divide by zero",
+			"message": "empty ra list",
+		})
+		return
+	}
 	weekdaysPer, weekdayRem := (totalWeekdays*req.PerShift)/numOfRAs, (totalWeekdays*req.PerShift)%numOfRAs
 	weekendsPer, weekendRem := (totalWeekends*req.PerShift)/numOfRAs, (totalWeekends*req.PerShift)%numOfRAs
+
 	var schedule util.Schedule
+
 	randy := rand.New(rand.NewSource(time.Now().UnixNano()))
 	fmt.Printf("----\nRAs: %d | weekendsPer: %d | weekdaysPer: %d\n----\n", numOfRAs, weekendsPer, weekdaysPer)
 generator:
+
 	for idx, ra := range IDMap {
 		var weekendsLeft, weekdaysLeft = weekendsPer, weekdaysPer
 		if weekendRem > 0 {
 			weekendsLeft++
-			weekendRem--
+			weekendRem-- //if extra weekend days, give to person
 		}
 		if (weekdayRem+weekendRem > numOfRAs && idx >= numOfRAs-weekdayRem) || (weekendRem == 0 && weekdayRem > 0) {
-			weekdaysLeft++
+			weekdaysLeft++ //if more extra days than people, stick onto end, or if there are no more weekends, stick after
 			weekdayRem--
 		}
 		fmt.Printf("ra id: %d | weekdaysLeft: %d | weekendsLeft: %d\n", ra.RA.ID, weekdaysLeft, weekendsLeft)
@@ -124,12 +137,12 @@ generator:
 				if (toTest.Weekday() <= time.Thursday && weekdaysLeft == 0) || (toTest.Weekday() >= time.Friday && weekendsLeft == 0) {
 					fmt.Printf("alreadyMetLimit\n")
 					continue
-				}
+				} //if the day goes over that type of shift
 				count, inAlready := util.NumShiftInSchedule(schedule, toTest, ra.RA.ID)
 				if inAlready || count == req.PerShift {
 					fmt.Printf("inAlready: %v | count: %d\n", inAlready, count)
 					continue
-				}
+				} //if that person has alaready been given this slot
 				schedule = append(schedule, util.Shift{
 					Date: toTest,
 					RA:   ra.RA,
