@@ -62,22 +62,25 @@ func getClient(config *oauth2.Config) *http.Client {
 	return config.Client(context.Background(), tok)
 }
 
-func Calendar() {
+func GetCalendar() (srv *calendar.Service, err error) {
 	ctx := context.Background()
 	b, err := ioutil.ReadFile("credentials.json")
 	if err != nil {
-		log.Fatalf("Unable to read client secret file: %v", err)
+		log.Printf("Unable to read client secret file: %v", err)
+		return nil, err
 	}
 	config, err := google.ConfigFromJSON(b, calendar.CalendarScope)
 	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
+		log.Printf("Unable to parse client secret file to config: %v", err)
+		return nil, err
 	}
 	client := getClient(config)
 
-	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
+	srv, err = calendar.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		log.Fatalf("Unable to retrieve Calendar client: %v", err)
+		log.Printf("Unable to retrieve Calendar client: %v", err)
+		return nil, err
 	}
-	fmt.Printf("srv: %v\n", srv)
+	return srv, nil
 
 }

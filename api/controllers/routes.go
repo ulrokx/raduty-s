@@ -10,5 +10,6 @@ func (s *Server) initializeRoutes() {
 		v1.GET("/assistants/all", s.AllAssistants)
 
 		v1.POST("/schedule/generate", s.GenerateSchedule)
+		v1.POST("/calendar/create", s.CreateCalendar)
 	}
 }

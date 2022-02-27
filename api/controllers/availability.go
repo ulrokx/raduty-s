@@ -19,6 +19,7 @@ type CreateAvailabilityRequest struct {
 	Email string
 	Days  []string
 	Dates []string
+	Group uint
 }
 
 type CWIDRequest struct {
@@ -52,6 +53,7 @@ func (s *Server) CreateAvailability(c *gin.Context) {
 		Email:           req.Email,
 		DayAvailability: daymask,
 		Unavailable:     parsedDates,
+		GroupID:         int(req.Group),
 	}
 	//see if assistant already registered could be extracted
 	var raEntry models.Assistant

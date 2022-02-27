@@ -6,13 +6,6 @@ import (
 	"github.com/ulrokx/raduty-s/api/models"
 )
 
-type Shift struct {
-	Date time.Time
-	RA   models.Assistant
-}
-
-type Schedule []Shift
-
 func dayInArray(arr []models.Unavailable, day time.Time) bool {
 	for _, d := range arr {
 		if d.Day.UTC() == day {
@@ -29,11 +22,11 @@ func CanWorkDay(ra models.Assistant, day time.Time) bool {
 	return false
 }
 
-func NumShiftInSchedule(schedule Schedule, day time.Time, id uint) (count int, already bool) {
+func NumShiftInSchedule(schedule []models.Shift, day time.Time, id uint) (count int, already bool) {
 	for _, d := range schedule {
 		if d.Date.UTC() == day {
 			count++
-			if d.RA.ID == id {
+			if d.AssistantID == id {
 				already = true
 			}
 		}
