@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ulrokx/raduty-s/api/models"
 	"github.com/ulrokx/raduty-s/api/util"
-	"google.golang.org/api/calendar/v3"
 )
 
 type GenerateRequest struct {
@@ -175,102 +174,5 @@ generator:
 		})
 	}
 	c.JSON(200, schedule)
-
-}
-
-type CreateCalendarRequest struct {
-	Schedule uint `binding:"required"`
-}
-
-func (s *Server) CreateCalendar(c *gin.Context) {
-	//bind JSON to request
-	var req CreateCalendarRequest
-	err := c.ShouldBindJSON(&req)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   err.Error(),
-			"message": "invalid request",
-		})
-		return
-	}
-
-	//retrieve a calendar service object
-	srv, err := util.GetCalendar()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   err.Error(),
-			"message": "failed to get calendar",
-		})
-		return
-	}
-
-	// load schedule from database with id
-	var schedule models.Schedule
-	lres := s.DB.Preload("Shifts").Preload("Shifts.Assistant").Find(&schedule)
-	if lres.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   lres.Error.Error(),
-			"message": "could not find schedule to create calendar on",
-		})
-		return
-	}
-
-	//create a new calendar on google api
-	cal, err := srv.Calendars.Insert(&calendar.Calendar{
-		Summary: schedule.Name,
-	}).Do()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   err.Error(),
-			"message": "could not create calendar",
-		})
-		return
-	}
-	fmt.Printf("cal id: %v\n", cal.Id)
-	//save google calendar id in table
-	schedule.Calendar = cal.Id
-	serr := s.DB.Save(&schedule)
-	if serr.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   serr.Error.Error(),
-			"message": "failed to save google calendar id",
-		})
-	}
-
-	beginDuration, _ := time.ParseDuration("25h")
-	endDuration, _ := time.ParseDuration("33h")
-	for _, shift := range schedule.Shifts {
-		event := &calendar.Event{
-			Attendees: []*calendar.EventAttendee{
-				{
-					Email:       shift.Assistant.Email,
-					DisplayName: fmt.Sprintf("%s %s", shift.Assistant.First, shift.Assistant.Last),
-				},
-			},
-			Start: &calendar.EventDateTime{
-				DateTime: shift.Date.Add(beginDuration).Format(time.RFC3339),
-				TimeZone: "America/New_York",
-			},
-			End: &calendar.EventDateTime{
-				DateTime: shift.Date.Add(endDuration).Format(time.RFC3339),
-				TimeZone: "America/New_York",
-			},
-			Summary: fmt.Sprintf("%s %s", shift.Assistant.First, shift.Assistant.Last),
-		}
-		event, err = srv.Events.Insert(cal.Id, event).Do()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error":   err.Error(),
-				"message": "failed to create event",
-			})
-			return
-		}
-		shift.CalendarID = event.Id
-		s.DB.Save(&shift)
-
-	}
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "all good",
-	})
 
 }

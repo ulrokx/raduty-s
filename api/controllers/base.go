@@ -36,6 +36,7 @@ func (s *Server) Initialize(DBDriver, DBUser, DBPass, DBPort, DBHost, DBName str
 		&models.Unavailable{},
 		&models.Schedule{},
 		&models.Shift{},
+		&models.Selected{},
 	)
 
 	s.Router = gin.Default()

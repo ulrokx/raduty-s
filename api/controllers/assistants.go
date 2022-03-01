@@ -9,6 +9,6 @@ import (
 
 func (s *Server) AllAssistants(c *gin.Context) {
 	var assistants []models.Assistant
-	s.DB.Preload("Unavailable").Find(&assistants)
+	s.DB.Find(&assistants)
 	c.JSON(http.StatusOK, assistants)
 }
