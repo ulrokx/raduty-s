@@ -1,2 +1,4 @@
 /tmp
 .env
+token.json
+credentials.json
