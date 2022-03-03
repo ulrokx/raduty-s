@@ -18,13 +18,13 @@ const (
 
 type Assistant struct {
 	gorm.Model
-	First           string
-	Last            string
-	CWID            string `gorm:"unique"`
-	Email           string
-	DayAvailability DayEnum
-	Unavailable     []Unavailable `gorm:"constraint:OnUpdate:CASCADE"`
-	CanResubmit     bool          `gorm:"default:FALSE"`
-	GroupID         int           `gorm:"default:0"`
-	Shifts          []Shift       `gorm:"foreignKey:AssistantID"`
+	First           string        `json:"first"`
+	Last            string        `json:"last"`
+	CWID            string        `gorm:"unique" json:"cwid"`
+	Email           string        `json:"email"`
+	DayAvailability DayEnum       `json:"availability"`
+	Unavailable     []Unavailable `gorm:"constraint:OnUpdate:CASCADE" json:"unavailable"`
+	CanResubmit     bool          `gorm:"default:FALSE" json:"canResubmit"`
+	GroupID         int           `gorm:"default:0" json:"groupId"`
+	Shifts          []Shift       `gorm:"foreignKey:AssistantID" json:"shifts"`
 }
