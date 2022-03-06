@@ -1,4 +1,4 @@
 /tmp
 token.json
 credentials.json
-.exe
+*.exe
