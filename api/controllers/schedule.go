@@ -13,11 +13,11 @@ import (
 )
 
 type GenerateRequest struct {
-	BeginDate string `binding:"required"`
-	EndDate   string `binding:"required"`
-	PerShift  int    `binding:"required"`
-	Group     int    `binding:"required"`
-	Name      string `binding:"required"`
+	BeginDate string   `binding:"required" json:"begin"`
+	EndDate   string   `binding:"required" json:"end"`
+	PerShift  int      `binding:"required" json:"perShift"`
+	Groups    []string `binding:"required" json:"groups"`
+	Name      string   `binding:"required" json:"name"`
 }
 
 type IDToDays struct {
@@ -31,18 +31,27 @@ func (a ByDays) Len() int           { return len(a) }
 func (a ByDays) Less(i, j int) bool { return len(a[i].Days) < len(a[j].Days) }
 func (a ByDays) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
-func (s *Server) GenerateSchedule(c *gin.Context) {
+func (s *Server) GenerateSchedule(c *gin.Context) { //TODO need to extract this
 	var req GenerateRequest
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
+		fmt.Println("error")
+		fmt.Println(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   err.Error(),
 			"message": "bad request",
 		})
 		return
 	}
-	startDate, err := util.ParseDate(req.BeginDate)
-	endDate, err := util.ParseDate(req.EndDate)
+	var startDate, endDate time.Time
+	test, err := time.Parse(time.RFC3339, req.BeginDate)
+	if err != nil {
+		startDate, err = util.ParseDate(req.BeginDate)
+		endDate, err = util.ParseDate(req.EndDate)
+	} else {
+		endDate, err = time.Parse(time.RFC3339, req.EndDate)
+		startDate = test
+	}
 	// calculate the number of days each ra must work
 
 	var totalWeekdays, totalWeekends, totalDays int
@@ -61,12 +70,13 @@ func (s *Server) GenerateSchedule(c *gin.Context) {
 	// find how many days each ra can work
 	// get all ras
 	var allRAs []models.Assistant
-	qres := s.DB.Preload("Unavailable").Find(&allRAs, "group_id = ?", req.Group)
+	qres := s.DB.Preload("Unavailable").Where("group_id IN ?", req.Groups).Find(&allRAs)
 	if qres.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   qres.Error,
 			"message": "query error",
 		})
+		return
 	}
 	//make map of ra to the days they can work
 	var IDMap []IDToDays
@@ -101,7 +111,7 @@ func (s *Server) GenerateSchedule(c *gin.Context) {
 	weekendsPer, weekendRem := (totalWeekends*req.PerShift)/numOfRAs, (totalWeekends*req.PerShift)%numOfRAs
 
 	var schedule []models.Shift
-
+	//generate schedule
 	randy := rand.New(rand.NewSource(time.Now().UnixNano()))
 	fmt.Printf("----\nRAs: %d | weekendsPer: %d | weekdaysPer: %d\n----\n", numOfRAs, weekendsPer, weekdaysPer)
 generator:
@@ -163,6 +173,9 @@ generator:
 		}
 
 	}
+
+	//check if valid
+
 	cerr := s.DB.Create(&models.Schedule{
 		Shifts: schedule,
 		Name:   req.Name,
