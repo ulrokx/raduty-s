@@ -10,6 +10,7 @@ func (s *Server) initializeRoutes() {
 		v1.GET("/assistants/all", s.AllAssistants)
 
 		v1.POST("/schedule/generate", s.GenerateSchedule)
+		v1.GET("/schedule/get", s.GetSchedules)
 
 		v1.POST("/calendar/create", s.CreateCalendar)
 		v1.GET("/calendar/get", s.GetSelectedCalendars)

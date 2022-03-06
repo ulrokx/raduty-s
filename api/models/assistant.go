@@ -26,5 +26,6 @@ type Assistant struct {
 	Unavailable     []Unavailable `gorm:"constraint:OnUpdate:CASCADE" json:"unavailable"`
 	CanResubmit     bool          `gorm:"default:FALSE" json:"canResubmit"`
 	GroupID         int           `gorm:"default:0" json:"groupId"`
+	Group           Group         `json:"group"`
 	Shifts          []Shift       `gorm:"foreignKey:AssistantID" json:"shifts"`
 }

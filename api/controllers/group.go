@@ -37,7 +37,7 @@ func (s *Server) CreateGroup(c *gin.Context) {
 
 func (s *Server) GetGroups(c *gin.Context) {
 	var res []models.Group
-	dberr := s.DB.Find(&res)
+	dberr := s.DB.Preload("Assistant").Find(&res)
 	if dberr.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   dberr.Error.Error(),

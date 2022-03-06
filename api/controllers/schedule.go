@@ -176,3 +176,16 @@ generator:
 	c.JSON(200, schedule)
 
 }
+
+func (s *Server) GetSchedules(c *gin.Context) {
+	res := []models.Schedule{}
+	dberr := s.DB.Find(&res)
+	if dberr.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   dberr.Error.Error(),
+			"message": "failed to get schedules",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}

@@ -9,6 +9,6 @@ import (
 
 func (s *Server) AllAssistants(c *gin.Context) {
 	var assistants []models.Assistant
-	s.DB.Find(&assistants)
+	s.DB.Joins("Group").Find(&assistants)
 	c.JSON(http.StatusOK, assistants)
 }
