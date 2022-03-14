@@ -1,7 +1,6 @@
 package scheduling
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -25,7 +24,7 @@ func GenerateShifts(req GenShiftsReq) (
 	schedule []models.Shift) {
 
 	randy := rand.New(rand.NewSource(time.Now().UnixNano()))
-	fmt.Printf("----\nRAs: %d | weekendsPer: %d | weekdaysPer: %d\n----\n", req.NumOfRAs, req.WeekendsPer, req.WeekdaysPer)
+	// 	fmt.Printf("----\nRAs: %d | weekendsPer: %d | weekdaysPer: %d\n----\n", req.NumOfRAs, req.WeekendsPer, req.WeekdaysPer)
 generator:
 
 	for idx, ra := range req.IDMap {
@@ -38,7 +37,7 @@ generator:
 			weekdaysLeft++ //if more extra days than people, stick onto end, or if there are no more weekends, stick after
 			req.WeekdayRem--
 		}
-		fmt.Printf("ra id: %d | weekdaysLeft: %d | weekendsLeft: %d\n", ra.RA.ID, weekdaysLeft, weekendsLeft)
+		// fmt.Printf("ra id: %d | weekdaysLeft: %d | weekendsLeft: %d\n", ra.RA.ID, weekdaysLeft, weekendsLeft)
 		var tried []int
 	stab:
 		for weekdaysLeft > 0 || weekendsLeft > 0 {
@@ -54,21 +53,21 @@ generator:
 			}
 			tried = append(tried, offset)
 
-			fmt.Printf("raid: %d weekdaysleft: %d weekendsleft: %d tried: %v\n", ra.RA.ID, weekdaysLeft, weekendsLeft, tried)
+			// fmt.Printf("raid: %d weekdaysleft: %d weekendsleft: %d tried: %v\n", ra.RA.ID, weekdaysLeft, weekendsLeft, tried)
 			toTest := req.StartDate.AddDate(0, 0, offset)
 
 			if util.CanWorkDay(ra.RA, toTest) {
 
-				fmt.Printf("can work day: %d | offset: %d\n", toTest.Day(), offset)
+				// fmt.Printf("can work day: %d | offset: %d\n", toTest.Day(), offset)
 
 				if (toTest.Weekday() <= time.Thursday && weekdaysLeft == 0) || (toTest.Weekday() >= time.Friday && weekendsLeft == 0) {
-					fmt.Printf("alreadyMetLimit\n")
+					// fmt.Printf("alreadyMetLimit\n")
 					continue
 				} //if the day goes over that type of shift
 
 				count, inAlready := util.NumShiftInSchedule(schedule, toTest, ra.RA.ID)
 				if inAlready || count == req.PerShift {
-					fmt.Printf("inAlready: %v | count: %d\n", inAlready, count)
+					// fmt.Printf("inAlready: %v | count: %d\n", inAlready, count)
 					continue
 				} //if that person has alaready been given this slot
 
