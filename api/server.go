@@ -14,7 +14,7 @@ var server = controllers.Server{}
 func Run() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("found no env file")
+		log.Println("found no env file")
 	} else {
 		fmt.Println("loaded from env file")
 	}

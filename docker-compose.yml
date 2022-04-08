@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  raduty-s:
+    depends_on:
+      postgres:
+        condition: service_started
+    build:
+      context: .
+    container_name: goserver
+    hostname: goserver
+    networks:
+      - mynet
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_DRIVER=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=postgres
+      - API_PORT=8080
+      - GIN_MODE=release
+    deploy:
+      restart_policy:
+        condition: on-failure
+  postgres:
+    image: postgres
+    container_name: postgres
+    hostname: postgres
+    networks:
+      - mynet
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres:/postgres/postgres_data
+    environment:
+      - POSTGRES_PASSWORD=postgres
+
+volumes:
+  postgres:
+
+networks:
+  mynet:
+    driver: bridge
+
